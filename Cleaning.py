@@ -5,7 +5,7 @@ def clean_tweets_json(input_file, output_file):
         with open(output_file, 'w', encoding='utf-8') as out:
             out.write('[')  # Include opening bracket
             for line in f:
-                if '/*' not in line and 'NumberLong' not in line and 'ObjectId' not in line:
+                if 'NumberLong' not in line and 'ObjectId' not in line:
                     out.write(line)  # Only write lines back to file that do not contain the specified patterns
             out.write(']')  # Include closing bracket
 
