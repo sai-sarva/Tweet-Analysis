@@ -3,11 +3,11 @@ def clean_tweets_json(input_file, output_file):
     # Step 1: Remove comments, ObjectID, and NumberLong
     with open(input_file, 'r', encoding='utf-8') as f:
         with open(output_file, 'w', encoding='utf-8') as out:
-            out.write('[')  # Include opening bracket
+            #out.write('[')  # Include opening bracket
             for line in f:
                 if 'NumberLong' not in line and 'ObjectId' not in line:
                     out.write(line)  # Only write lines back to file that do not contain the specified patterns
-            out.write(']')  # Include closing bracket
+            #out.write(']')  # Include closing bracket
 
     # # Step 2: Add commas between JSON objects
     # with open(output_file, 'r+', encoding='utf-8') as inp:
