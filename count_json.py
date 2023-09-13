@@ -5,16 +5,16 @@ def read_json_in_chunks(file_path, chunk_size=1000):
         chunk = ""
         count = 0
         for line in f:
-            print(line)
-            # chunk += line
-            # count += 1
-            # if count % chunk_size == 0:
-            #     try:
-            #         json.loads("[" + chunk + "]")
-            #         print(f"Chunk {count//chunk_size} is valid.")
-            #     except json.JSONDecodeError as e:
-            #         print(f"Error in chunk {count//chunk_size}: {e}")
-            #     chunk = ""
+            #print(line)
+            chunk += line
+            count += 1
+            if count % chunk_size == 0:
+                try:
+                    json.loads("[" + chunk + "]")
+                    print(f"Chunk {count//chunk_size} is valid.")
+                except json.JSONDecodeError as e:
+                    print(f"Error in chunk {count//chunk_size}: {e}")
+                chunk = ""
 
-file_path = 'C:/Users/ss32309/tweets_clean.json'
+file_path = 'tweets_clean.json'
 read_json_in_chunks(file_path)
