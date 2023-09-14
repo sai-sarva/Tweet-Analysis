@@ -1,0 +1,208 @@
+//Delete all the information in the DB
+match(n) detach delete n
+
+
+
+match(n) return n
+
+
+
+//Creating the Tweet Nodes
+CALL apoc.periodic.iterate(
+'CALL apoc.load.json("https://raw.githubusercontent.com/sai-sarva/Tweet-Analysis/main/tweets_clean.json") YIELD value',
+'WITH value
+ MERGE (t:Tweet{id:value.id})
+ ON CREATE SET t += {
+   postedTimestamp: datetime({ epochMillis: apoc.date.parse(value.postedTime, "ms", "yyyy-MM-dd\'T\'HH:mm:ss.SSS\'Z\'")}),
+   text: value.text,
+   language: value.twitter_lang,
+   retweetCount: value.retweetCount,
+   favoritesCount: value.favoritesCount,
+   verb: value.verb
+ }',
+{batchSize:500})
+YIELD *;
+
+
+
+
+//Displaying the Tweet Nodes
+match(n) return n limit 10
+
+
+
+//Creating User Nodes
+CALL apoc.periodic.iterate(
+'CALL apoc.load.json("https://raw.githubusercontent.com/sai-sarva/Tweet-Analysis/main/tweets_clean.json") YIELD value',
+'WITH value
+ MERGE (u:User{id:value.actor.id})
+ ON CREATE SET u += {
+   displayName: value.actor.displayName,
+   postedTime: value.actor.postedTime,
+   image: value.actor.image,
+   summary: value.actor.summary,
+   friendsCount: value.actor.friendsCount,
+   followersCount: value.actor.followersCount
+ }',
+{batchSize:500})
+YIELD *;
+
+
+
+//Creating the relationship POSTS between the User and the Tweet Node
+CALL apoc.periodic.iterate(
+'CALL apoc.load.json("https://raw.githubusercontent.com/sai-sarva/Tweet-Analysis/main/tweets_clean.json") YIELD value',
+'WITH value
+ MATCH (u:User{id:value.actor.id}), (t:Tweet{id:value.id})
+ MERGE (u)-[:POSTS]->(t)',
+{batchSize:500})
+YIELD *;
+
+
+
+
+//Displaying the Nodes for Visualization
+match(u:User)-[:POSTS]->(t:Tweet) return u,t limit 10
+
+
+
+//Displaying the User Nodes
+match(u:User) return u limit 10
+
+
+
+// Create Link nodes and CONTAINS relationship between the Tweet and Link
+CALL apoc.periodic.iterate(
+'CALL apoc.load.json("https://raw.githubusercontent.com/sai-sarva/Tweet-Analysis/main/tweets_clean.json") YIELD value',
+'WITH value
+ MATCH (t:Tweet{id:value.id})
+ UNWIND value.twitter_entities.urls AS url
+ MERGE (l:Link{url:url.expanded_url})
+ MERGE (t)-[:CONTAINS]->(l)',
+{batchSize:500})
+YIELD *;
+
+
+match(t:Tweet) return t limit 5
+
+
+
+match(t:Tweet{id:"149715690143449899009"}) return t
+
+
+
+// Create Hashtag nodes and TAGS relationship between the Tweet and Hashtag Node
+CALL apoc.periodic.iterate(
+'CALL apoc.load.json("https://raw.githubusercontent.com/sai-sarva/Tweet-Analysis/main/tweets_clean.json") YIELD value',
+'WITH value
+ MATCH (t:Tweet{id:value.id})
+ UNWIND value.twitter_entities.hashtags AS hashtag
+ MERGE (h:Hashtag{text:hashtag.text})
+ MERGE (t)-[:TAGS]->(h)',
+{batchSize:500})
+YIELD *;
+
+
+
+match(t:Tweet) return t limit 5
+
+
+// Create Source nodes and USING relationship between the Tweet and Source Node
+CALL apoc.periodic.iterate(
+'CALL apoc.load.json("https://raw.githubusercontent.com/sai-sarva/Tweet-Analysis/main/tweets_clean.json") YIELD value',
+'WITH value
+ MATCH (t:Tweet{id:value.id})
+ MERGE (s:Source{displayName:value.generator.displayName})
+ MERGE (t)-[:USING]->(s)',
+{batchSize:500})
+YIELD *;
+
+
+match(t:Tweet) return t limit 5
+
+
+
+
+
+//Creating the relationship MENTIONS between the Tweet and User Nodes
+CALL apoc.periodic.iterate(
+'CALL apoc.load.json("https://raw.githubusercontent.com/sai-sarva/Tweet-Analysis/main/tweets_clean.json") YIELD value',
+'WITH value
+ MATCH (t:Tweet{id:value.id}), (u:User{id:value.actor.id})
+ WHERE value.twitter_entities.user_mentions
+ MERGE (t)-[:MENTIONS]->(u)',
+{batchSize:500})
+YIELD *;
+
+
+
+match(t:Tweet) return t limit 5
+
+
+
+match(t:Tweet{id:"149715690158360760324"}) return t
+
+// Create a retweet node for each tweet with the verb "share" and replicate original tweet attributes
+MATCH (t:Tweet)
+WHERE t.verb = "share"
+MERGE (rt:Tweet{id:t.id})
+ON CREATE SET rt = t
+MERGE (rt)-[:RETWEETED]->(t)
+
+WITH rt, t.twitter_entities AS entities
+UNWIND entities.hashtags AS hashtag
+MERGE (rt)-[:TAGS]->(h:Hashtag{text:hashtag.text})
+
+WITH rt, entities
+UNWIND entities.urls AS url
+MERGE (rt)-[:CONTAINS]->(l:Link{url:url.expanded_url})
+
+WITH rt, entities
+UNWIND entities.user_mentions AS user
+MERGE (rt)-[:MENTIONS]->(u:User{id:user.id})
+
+
+
+match(t:Tweet{id:"149715690158360760324"}) return t
+
+
+MATCH (n:User) RETURN n LIMIT 25;
+
+
+MATCH (t:Tweet)-[r]->()
+RETURN t, collect(r) as relationships
+LIMIT 1
+
+
+MATCH (t:Tweet)-[r:RETWEETED]->()
+RETURN t, collect(r) as relationships
+LIMIT 1
+
+
+MATCH (t:Tweet)-[r]->()
+WHERE type(r) IN ['RETWEETED', 'CONTAINS']
+RETURN t, collect(r) as relationships
+LIMIT 1
+
+
+
+
+MATCH (t:Tweet)-[r:RETWEETED]->()
+RETURN t, collect(r) as relationships
+LIMIT 1
+
+
+
+MATCH (t:Tweet{id:"YourTweetID"})-[r:RETWEETED]->() RETURN t, collect(r) as relationships
+
+
+
+
+
+
+
+
+
+
+
+
